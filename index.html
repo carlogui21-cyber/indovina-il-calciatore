@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#10301a">
+<meta name="description" content="Quiz sui calciatori dei 10 top campionati europei: indovina il nome lettera per lettera.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>Indovina il Calciatore</title>
+<style>
+@font-face{font-family:Anton;src:url(fonts/anton-latin-400-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0000-00FF,U+2000-206F,U+20AC}
+@font-face{font-family:Anton;src:url(fonts/anton-latin-ext-400-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0100-024F}
+@font-face{font-family:Barlow;font-weight:400;src:url(fonts/barlow-latin-400-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2212}
+@font-face{font-family:Barlow;font-weight:600;src:url(fonts/barlow-latin-600-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2212}
+@font-face{font-family:Barlow;font-weight:700;src:url(fonts/barlow-latin-700-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0000-00FF,U+2000-206F,U+20AC,U+2212}
+@font-face{font-family:Barlow;font-weight:400;src:url(fonts/barlow-latin-ext-400-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0100-024F}
+@font-face{font-family:Barlow;font-weight:700;src:url(fonts/barlow-latin-ext-700-normal.woff2) format("woff2");font-display:swap;unicode-range:U+0100-024F}
+/* VOICE: stadio la sera, gioco veloce e scanzonato
+   IDEA: il tabellone e il campo a strisce; le lettere sono numeri di maglia
+   PICTURE: il nome a tessere su un campo tagliato a strisce, cartellini come vite
+   COLOUR and TYPE: verde prato dominante, bianco gesso, giallo/rosso cartellino; Anton + Barlow
+   LAYOUT: tabellone in alto, tessere al centro, tastiera sotto; su mobile tutto in colonna */
+:root{color-scheme:light dark;
+--bg:light-dark(#2e8540,#10301a);--bg2:light-dark(#287a39,#0d2915);
+--ink:#fff;--chalk:rgba(255,255,255,.85);--soft:rgba(255,255,255,.7);
+--board:light-dark(#0f2416,#06140b);--tile:#fff;--tileInk:light-dark(#1d5e2b,#123d1d);
+--yellow:#ffd21f;--red:#e4262f;--key:rgba(255,255,255,.14);--keyH:rgba(255,255,255,.26)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;color:var(--ink);font:16px/1.5 Barlow,system-ui,sans-serif;overflow-x:clip;min-height:100vh;
+background:repeating-linear-gradient(90deg,var(--bg) 0 80px,var(--bg2) 80px 160px)}
+.wrap{max-width:900px;margin:0 auto;padding:max(clamp(14px,3vw,36px),env(safe-area-inset-top)) max(4vw,14px,env(safe-area-inset-right)) max(32px,env(safe-area-inset-bottom)) max(4vw,14px,env(safe-area-inset-left))}
+html{-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+button,select{touch-action:manipulation}.k,.btn{user-select:none;-webkit-user-select:none}
+.head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.gear{min-height:44px;padding:0 14px;border-radius:99px;border:2px solid rgba(255,255,255,.5);background:rgba(0,0,0,.2);color:#fff;font:700 15px Barlow,sans-serif;cursor:pointer;flex:none}
+.gear[aria-expanded=true]{background:#fff;color:var(--tileInk);border-color:#fff}
+.opts[hidden]{display:none}
+h1{font:400 clamp(32px,6vw,52px)/1.05 Anton,Impact,sans-serif;margin:0;letter-spacing:.01em;text-wrap:balance}
+.top{display:grid;gap:14px;margin-bottom:14px}
+.f{display:flex;flex-direction:column;gap:2px}.f select{width:100%}
+.sub{color:var(--soft);margin:4px 0 0}
+.board{background:var(--board);border-radius:14px;padding:14px 18px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;
+box-shadow:0 10px 0 rgba(0,0,0,.25);border:2px solid rgba(255,255,255,.12)}
+.stat{text-align:center}.stat b{display:block;font:400 clamp(24px,4vw,34px)/1 Anton,sans-serif;color:var(--yellow);font-variant-numeric:tabular-nums}
+.stat span{font-size:13px;color:var(--soft)}
+.pitch{position:relative;margin:22px 0 16px;border:3px solid var(--chalk);border-radius:6px;padding:clamp(18px,4vw,36px) clamp(10px,3vw,28px);
+background:radial-gradient(circle at 50% 50%,transparent 58px,var(--chalk) 59px 61px,transparent 62px),linear-gradient(90deg,transparent calc(50% - 1.5px),var(--chalk) calc(50% - 1.5px) calc(50% + 1.5px),transparent calc(50% + 1.5px));
+min-height:250px;display:flex;flex-direction:column;justify-content:center;gap:18px;overflow:hidden}
+.clue{position:relative;background:rgba(0,0,0,.38);border-radius:10px;padding:12px 16px;max-width:620px;margin:0 auto;text-align:center;backdrop-filter:blur(2px)}
+.tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:6px}
+.tag{font-size:13px;font-weight:700;background:var(--yellow);color:#1a1a1a;border-radius:99px;padding:2px 10px}
+.tag.alt{background:#fff;color:var(--tileInk)}
+.clue p{margin:0;font-size:17px}
+.name{position:relative;display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(10px,3vw,26px)}
+.word{display:flex;gap:clamp(3px,.8vw,6px);flex-wrap:nowrap}
+.name{--n:8;container-type:inline-size;width:100%}
+.t{width:min(48px,calc(100cqi / var(--n) - 4px));aspect-ratio:3/4;background:var(--tile);color:var(--tileInk);border-radius:6px;
+display:grid;place-items:center;font:400 min(36px,calc(100cqi / var(--n) * .6))/1 Anton,sans-serif;box-shadow:0 4px 0 rgba(0,0,0,.28)}
+.t.sep{background:none;box-shadow:none;color:#fff;width:auto}
+.t.blank{background:rgba(255,255,255,.18);box-shadow:inset 0 -4px 0 var(--chalk);color:transparent}
+.t.new{animation:pop .35s ease}
+.t.miss{background:var(--red);color:#fff}
+@keyframes pop{0%{transform:scale(.4) rotate(-8deg)}70%{transform:scale(1.12)}100%{transform:none}}
+.cards{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
+.cards small{color:var(--soft);margin-right:4px}
+.card{width:20px;height:28px;border-radius:3px;background:var(--yellow);box-shadow:0 2px 0 rgba(0,0,0,.3);transition:.25s}
+.card.used{background:rgba(255,255,255,.18);box-shadow:none}
+.card.red{background:var(--red)}
+.kb{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:6px;margin:14px 0}
+.k{height:46px;border:0;border-radius:8px;background:var(--key);color:#fff;font:700 18px Barlow,sans-serif;cursor:pointer}
+.k:hover:not(:disabled){background:var(--keyH)}
+.k:disabled{cursor:default}
+.k.ok{background:#fff;color:var(--tileInk)}.k.no{background:rgba(0,0,0,.35);color:rgba(255,255,255,.35)}
+button:focus-visible,select:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.btn{min-height:44px;padding:0 18px;border-radius:99px;border:2px solid #fff;background:transparent;color:#fff;font:700 16px Barlow,sans-serif;cursor:pointer}
+.btn.main{background:var(--yellow);border-color:var(--yellow);color:#1a1a1a}
+.btn:disabled{opacity:.4;cursor:default}
+.opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));width:100%;gap:10px;flex-wrap:wrap;align-items:center}
+label{font-size:14px;color:var(--soft)}
+select:disabled{opacity:.45}
+select{min-height:44px;font:600 16px Barlow,sans-serif;border-radius:10px;border:2px solid rgba(255,255,255,.4);background:var(--board);color:#fff;padding:0 10px}
+.msg{min-height:28px;text-align:center;font-weight:700;font-size:18px;margin:4px 0 0}
+.over{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;padding:16px;z-index:5}
+.over.on{display:grid}
+.panel{background:var(--board);border:3px solid var(--chalk);border-radius:14px;padding:28px;max-width:440px;width:100%;text-align:center}
+.panel h2{font:400 40px/1.05 Anton,sans-serif;margin:0 0 6px;color:var(--yellow)}
+.panel ul{list-style:none;padding:0;margin:14px 0 20px;text-align:left;max-height:40vh;overflow:auto}
+.panel li{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:15px}
+.note{color:var(--soft);font-size:13px;text-align:center;margin-top:18px}
+@media(max-width:600px){h1{font-size:clamp(22px,7vw,30px);white-space:nowrap}.gear{padding:0 12px;font-size:14px}.board{padding:10px 8px}.stat b{font-size:24px}.stat span{font-size:12px}.pitch{margin:14px 0 10px;min-height:0}.top{margin-bottom:10px}.opts{grid-template-columns:repeat(2,minmax(0,1fr))}.f:first-child{grid-column:1/-1}.kb{grid-template-columns:repeat(9,minmax(0,1fr))}.pitch{background-size:auto}}
+@media(prefers-reduced-motion:reduce){.t.new{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <div class="head"><h1>Indovina il Calciatore</h1><button class="gear" id="setBtn" aria-expanded="false" aria-controls="opts">Opzioni</button></div>
+      <p class="sub" id="poolInfo"></p>
+    </div>
+    <div class="opts" id="opts" hidden>
+      <div class="f"><label for="lg">Campionato</label>
+      <select id="lg"></select></div>
+      <div class="f"><label for="fame">Fama</label>
+      <select id="fame"><option value="stelle">Stelle (da €30 mln)</option><option value="noti" selected>Noti (da €10 mln)</option><option value="esperto">Esperto (da €2 mln)</option><option value="tutti">Tutte le rose</option></select></div>
+      <div class="f"><label for="lvl">Livello</label>
+      <select id="lvl"><option value="facile">Facile</option><option value="medio" selected>Medio</option><option value="difficile">Difficile</option></select></div>
+    </div>
+  </div>
+
+  <div class="board" aria-live="polite">
+    <div class="stat"><b id="sRound">1/10</b><span>Domanda</span></div>
+    <div class="stat"><b id="sScore">0</b><span>Punti</span></div>
+    <div class="stat"><b id="sStreak">0</b><span>Serie</span></div>
+    <div class="stat"><b id="sBest">0</b><span>Record</span></div>
+  </div>
+
+  <div class="pitch">
+    <div class="clue">
+      <div class="tags" id="tags"></div>
+      <p id="clue"></p>
+    </div>
+    <div class="name" id="name" aria-label="Nome da indovinare"></div>
+    <div class="cards" id="cards"></div>
+  </div>
+
+  <p class="msg" id="msg" role="status"></p>
+  <div class="kb" id="kb"></div>
+  <div class="row">
+    <button class="btn" id="hint">Aiutino (−15 punti)</button>
+    <button class="btn" id="skip">Passa</button>
+    <button class="btn main" id="next" disabled>Prossimo →</button>
+  </div>
+  <p class="note">Completa il nome lettera per lettera: cinque errori e scatta il cartellino rosso. Partite da 10 domande.<br>Rose 2025/26 dei 10 campionati top del ranking UEFA, dati Transfermarkt (dataset Kaggle, aggiornato al 5 settembre 2026). Età calcolata a oggi.</p>
+</div>
+
+<div class="over" id="over">
+  <div class="panel">
+    <h2 id="endTitle">Fischio finale</h2>
+    <p id="endText"></p>
+    <ul id="endList"></ul>
+    <button class="btn main" id="again">Nuova partita</button>
+  </div>
+</div>
+
+<script>
+{
+const LEG=[
+// [nome, ruolo, nazione, indizio, categorie]
+["MARADONA","Attaccante","Argentina","La «Mano de Dios» e i due scudetti del Napoli, 1987 e 1990.","leg"],
+["PELE","Attaccante","Brasile","L'unico giocatore ad aver vinto tre Mondiali.","leg"],
+["BAGGIO","Trequartista","Italia","Il Divin Codino, Pallone d'Oro 1993.","leg ita"],
+["MALDINI","Difensore","Italia","Una carriera intera al Milan, cinque Coppe dei Campioni/Champions.","leg ita"],
+["TOTTI","Attaccante","Italia","Er Pupone, capitano della Roma per quasi vent'anni.","leg ita"],
+["DEL PIERO","Attaccante","Italia","Pinturicchio, recordman di presenze e gol con la Juventus.","leg ita"],
+["ZIDANE","Centrocampista","Francia","Pallone d'Oro 1998, la testata nella finale del 2006.","leg"],
+["CRUYFF","Attaccante","Olanda","Simbolo del calcio totale e del 14 sulla maglia.","leg"],
+["BECKENBAUER","Difensore","Germania","Der Kaiser, campione del mondo da giocatore e da allenatore.","leg"],
+["VAN BASTEN","Attaccante","Olanda","Tre Palloni d'Oro e la volée nella finale di Euro '88.","leg"],
+["BUFFON","Portiere","Italia","Gigi, campione del mondo nel 2006 tra i pali.","leg ita"],
+["PIRLO","Centrocampista","Italia","L'Architetto, il cucchiaio contro l'Inghilterra a Euro 2012.","leg ita"],
+["CANNAVARO","Difensore","Italia","Capitano mondiale e Pallone d'Oro nel 2006.","leg ita"],
+["PUSKAS","Attaccante","Ungheria","Il premio FIFA per il gol più bello porta il suo nome.","leg"],
+["EUSEBIO","Attaccante","Portogallo","La Pantera Nera del Benfica, capocannoniere al Mondiale 1966.","leg"],
+["PLATINI","Centrocampista","Francia","Tre Palloni d'Oro consecutivi con la maglia della Juventus.","leg"],
+["HENRY","Attaccante","Francia","Re di Highbury, miglior marcatore nella storia dell'Arsenal.","leg"],
+["RONALDINHO","Trequartista","Brasile","Pallone d'Oro 2005, applaudito dal Bernabéu col Barcellona.","leg"],
+["KAKA","Trequartista","Brasile","Ultimo Pallone d'Oro prima dell'era Messi-Ronaldo, nel 2007 col Milan.","leg"],
+["ZANETTI","Difensore","Argentina","Il Tractor, capitano dell'Inter del Triplete.","leg"],
+["BATISTUTA","Attaccante","Argentina","Re Leone, idolo della Fiorentina.","leg"],
+["SHEVCHENKO","Attaccante","Ucraina","Pallone d'Oro 2004, il rigore decisivo a Manchester nel 2003.","leg"],
+["RIVA","Attaccante","Italia","Rombo di Tuono, lo scudetto del Cagliari nel 1970.","leg ita"],
+["YASHIN","Portiere","URSS","Il Ragno Nero, unico portiere a vincere il Pallone d'Oro.","leg"],
+["DI STEFANO","Attaccante","Argentina/Spagna","Cinque Coppe dei Campioni di fila col Real Madrid.","leg"],
+["NESTA","Difensore","Italia","Eleganza pura: Lazio, Milan e Mondiale 2006.","leg ita"],
+["MESSI","Attaccante","Argentina","Otto Palloni d'Oro e il Mondiale del 2022.","mod"],
+["CRISTIANO RONALDO","Attaccante","Portogallo","Miglior marcatore nella storia della Champions League.","mod"],
+["MBAPPE","Attaccante","Francia","Tripletta in una finale mondiale, quella del 2022.","mod"],
+["HAALAND","Attaccante","Norvegia","Record di gol in una stagione di Premier League al primo anno.","mod"],
+["MODRIC","Centrocampista","Croazia","Pallone d'Oro 2018 dopo la finale mondiale con la sua nazionale.","mod"],
+["LEWANDOWSKI","Attaccante","Polonia","Cinque gol in nove minuti col Bayern contro il Wolfsburg.","mod"],
+["SALAH","Attaccante","Egitto","Il Faraone, re dei gol del Liverpool.","mod"],
+["DE BRUYNE","Centrocampista","Belgio","Re degli assist del Manchester City.","mod"],
+["BENZEMA","Attaccante","Francia","Pallone d'Oro 2022 dopo una Champions trascinata col Real.","mod"],
+["KANE","Attaccante","Inghilterra","Miglior marcatore di sempre della nazionale inglese.","mod"],
+["NEYMAR","Attaccante","Brasile","Ha superato Pelé come miglior marcatore della Seleção.","mod"],
+["IBRAHIMOVIC","Attaccante","Svezia","Ibracadabra: rovesciate, scudetti e citazioni in terza persona.","mod"],
+["BELLINGHAM","Centrocampista","Inghilterra","La rovesciata al 95' contro la Slovacchia a Euro 2024.","mod"],
+["YAMAL","Ala","Spagna","Campione d'Europa nel 2024 quando era ancora minorenne.","mod"],
+["RODRI","Centrocampista","Spagna","Pallone d'Oro 2024, metronomo del Manchester City.","mod"],
+["DEMBELE","Attaccante","Francia","Pallone d'Oro 2025 dopo la Champions vinta col PSG.","mod"],
+["KVARATSKHELIA","Ala","Georgia","Ribattezzato «Kvaradona» dai tifosi napoletani.","mod"],
+["OSIMHEN","Attaccante","Nigeria","Capocannoniere della Serie A nello scudetto del Napoli 2023.","mod"],
+["BARELLA","Centrocampista","Italia","Motore dell'Inter e campione d'Europa a Wembley nel 2021.","mod ita"],
+["DONNARUMMA","Portiere","Italia","Miglior giocatore di Euro 2020, decisivo ai rigori.","mod ita"],
+["CHIELLINI","Difensore","Italia","Capitano azzurro campione d'Europa nel 2021, famoso per i suoi tackle.","mod ita"],
+["LAUTARO","Attaccante","Argentina","El Toro, capitano dell'Inter dello scudetto della seconda stella.","mod"]
+];
+const LEAGUES=["Premier League","Serie A","LaLiga","Bundesliga","Ligue 1","Liga Portugal","Eredivisie","Pro League","Chance Liga","Süper Lig"];
+const LFLAG=["Inghilterra","Italia","Spagna","Germania","Francia","Portogallo","Paesi Bassi","Belgio","Rep. Ceca","Turchia"];
+const FAME={stelle:30,noti:10,esperto:2,tutti:0};
+const FOOT={d:"destro",s:"sinistro",e:"ambidestro"};
+const LV={facile:{show:.5,pts:60},medio:{show:.28,pts:100},difficile:{show:0,pts:150}};
+const ROUNDS=10,LIVES=5,KEYS="QWERTYUIOPASDFGHJKLZXCVBNM".split("");
+const $=id=>document.getElementById(id);
+const isL=ch=>ch>="A"&&ch<="Z";
+let DB=[],deck=[],round=0,score=0,streak=0,best=0,cur=null,shown=new Set(),guessed=new Set(),miss=0,done=false,hinted=0,log=[],fresh=new Set();
+try{best=+localStorage.getItem("quizcalcio-best")||0}catch(e){}
+$("lg").innerHTML=`<option value="all">Tutti e 10</option>`+LEAGUES.map((l,i)=>`<option value="${i}">${l}</option>`).join("")+`<option value="leg">Leggende del passato</option>`;
+
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+const eur=v=>v>=1?`€${String(+v.toFixed(1)).replace(".",",")} mln`:`€${Math.round(v*1000)} mila`;
+
+function toCard(p){
+  if(p.length===5) return {name:p[0],tags:[p[1],p[2]],clue:p[3]};
+  const [name,role,nat,club,lg,age,foot,h,val,caps,goals]=p;
+  const bits=[];
+  if(age)bits.push(`${age} anni`);
+  if(h)bits.push(`${(h/100).toFixed(2).replace(".",",")} m`);
+  if(foot)bits.push(`piede ${FOOT[foot]}`);
+  let t=`Squadra: ${club} (${LEAGUES[lg]}). ${bits.join(", ")}. Valore di mercato: ${eur(val)}.`;
+  t+=caps?` In nazionale: ${caps} presenze, ${goals} gol.`:" Nessuna presenza con la nazionale maggiore.";
+  return {name,tags:[role,nat],clue:t};
+}
+function pool(){
+  const lg=$("lg").value,f=FAME[$("fame").value];
+  if(lg==="leg")return LEG;
+  return DB.filter(p=>(lg==="all"||p[4]==+lg)&&p[8]>=f);
+}
+function newGame(){
+  const pl=pool();
+  $("fame").disabled=$("lg").value==="leg";
+  const sel=id=>$(id).selectedOptions[0].textContent.replace(/ \(.*\)/,"");
+  $("poolInfo").textContent=$("lg").value==="leg"?`Leggende del passato · ${sel("lvl")} · ${pl.length} campioni`:`${sel("lg")} · ${sel("fame")} · ${sel("lvl")} · ${pl.length.toLocaleString("it-IT")} giocatori`;
+  if(!pl.length){$("msg").textContent="Nessun giocatore con questi filtri: prova un livello di fama più ampio.";return}
+  deck=shuffle(pl.slice()).slice(0,ROUNDS).map(toCard);
+  round=0;score=0;streak=0;log=[];$("over").classList.remove("on");load();
+}
+function load(){
+  cur=deck[round];miss=0;done=false;hinted=0;guessed=new Set();shown=new Set();fresh=new Set();
+  const letters=[...new Set([...cur.name].filter(isL))];
+  const lv=LV[$("lvl").value];
+  shown.add(cur.name[0]);
+  shuffle(letters.slice()).slice(0,Math.round(letters.length*lv.show)).forEach(l=>shown.add(l));
+  $("msg").textContent="";$("next").disabled=true;$("hint").disabled=false;$("skip").disabled=false;
+  render();
+}
+const has=l=>[...cur.name].includes(l);
+function solved(){return [...cur.name].filter(isL).every(l=>shown.has(l)||guessed.has(l))}
+function render(){
+  $("sRound").textContent=`${Math.min(round+1,ROUNDS)}/${deck.length}`;
+  $("sScore").textContent=score;$("sStreak").textContent=streak;$("sBest").textContent=best;
+  $("tags").innerHTML=cur.tags.filter(Boolean).map((t,i)=>`<span class="tag${i?" alt":""}">${t}</span>`).join("");
+  $("clue").textContent=cur.clue;
+  const words=cur.name.split(" ");
+  $("name").style.setProperty("--n",Math.max(8,...words.map(w=>w.length)));
+  $("name").innerHTML=words.map(w=>`<div class="word">${[...w].map(l=>{
+    if(!isL(l))return `<span class="t sep">${l}</span>`;
+    const vis=shown.has(l)||guessed.has(l);
+    const cls=vis?(fresh.has(l)?"t new":"t"):(done?"t miss":"t blank");
+    return `<span class="${cls}">${vis||done?l:"_"}</span>`}).join("")}</div>`).join("");
+  $("cards").innerHTML=`<small>Cartellini:</small>`+Array.from({length:LIVES},(_,i)=>`<span class="card${i<miss?(miss>=LIVES?" used red":" used"):""}"></span>`).join("");
+  $("kb").innerHTML=KEYS.map(k=>{
+    const used=guessed.has(k)||(shown.has(k)&&has(k));
+    const cls=!used?"k":(has(k)?"k ok":"k no");
+    return `<button class="${cls}" data-k="${k}" ${used||done?"disabled":""} aria-label="Lettera ${k}">${k}</button>`}).join("");
+  fresh.clear();
+}
+function guess(k){
+  if(!cur||done||guessed.has(k)||(shown.has(k)&&has(k)))return;
+  guessed.add(k);
+  if(has(k)){fresh.add(k);if(solved())return finish(true)}
+  else{miss++;$("msg").textContent=miss>=LIVES?"":["Fuori di poco!","Palo!","Traversa!","Ammonizione…"][Math.min(miss-1,3)];if(miss>=LIVES)return finish(false)}
+  render();
+}
+function finish(win,skipped){
+  done=true;
+  const lv=LV[$("lvl").value];
+  let pts=0;
+  if(win){pts=Math.max(10,lv.pts+(LIVES-miss)*10-hinted*15);streak++;pts+=streak>=3?20:0}
+  else streak=0;
+  score+=pts;
+  if(score>best){best=score;try{localStorage.setItem("quizcalcio-best",best)}catch(e){}}
+  log.push([cur.name,win,pts]);
+  $("msg").textContent=win?`Gol! +${pts} punti${streak>=3?" (bonus serie)":""}`:skipped?`Passato: era ${cur.name}`:`Cartellino rosso! Era ${cur.name}`;
+  $("next").disabled=false;$("hint").disabled=true;$("skip").disabled=true;
+  render();$("next").focus({preventScroll:true});
+}
+function next(){round++;if(round>=deck.length)return end();load()}
+function end(){
+  const ok=log.filter(r=>r[1]).length;
+  $("endTitle").textContent=ok>=8?"Pallone d'Oro!":ok>=5?"Buona partita!":"Si torna ad allenarsi";
+  $("endText").textContent=`${ok} su ${log.length} indovinati, ${score} punti. Record: ${best}.`;
+  $("endList").innerHTML=log.map(r=>`<li><span>${r[1]?"✓":"✗"} ${r[0]}</span><span>${r[2]?"+"+r[2]:"0"}</span></li>`).join("");
+  $("over").classList.add("on");$("again").focus({preventScroll:true});
+}
+function hint(){
+  if(done||!cur)return;
+  const left=[...new Set([...cur.name].filter(isL))].filter(l=>!shown.has(l)&&!guessed.has(l));
+  if(!left.length)return;
+  const l=left[Math.random()*left.length|0];
+  hinted++;guessed.add(l);fresh.add(l);
+  $("msg").textContent=`Aiutino: c'è la ${l}`;
+  if(solved())return finish(true);
+  render();
+}
+$("kb").addEventListener("click",e=>{const b=e.target.closest("[data-k]");if(b)guess(b.dataset.k)});
+$("hint").addEventListener("click",hint);
+$("skip").addEventListener("click",()=>{if(cur&&!done)finish(false,true)});
+$("next").addEventListener("click",next);
+$("again").addEventListener("click",newGame);
+$("setBtn").addEventListener("click",()=>{const o=$("opts"),open=o.hidden;o.hidden=!open;$("setBtn").setAttribute("aria-expanded",open)});
+["lg","fame","lvl"].forEach(id=>$(id).addEventListener("change",newGame));
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="SELECT"||e.ctrlKey||e.metaKey||e.altKey)return;
+  if($("over").classList.contains("on"))return;
+  const k=e.key.toUpperCase();
+  if(/^[A-Z]$/.test(k))guess(k);
+  else if(e.key==="Enter"&&done&&document.activeElement!==$("next"))next();
+});
+$("msg").textContent="Carico le rose…";
+if("serviceWorker" in navigator&&location.protocol!=="file:"){try{navigator.serviceWorker.register("sw.js").catch(()=>{})}catch(e){}}
+fetch("players.json").then(r=>{if(!r.ok)throw 0;return r.json()}).then(d=>{DB=d;newGame()})
+.catch(()=>{$("lg").value="leg";newGame();$("msg").textContent="Non riesco a caricare le rose: per ora si gioca con le leggende."});
+}
+</script>
+</body>
+</html>
